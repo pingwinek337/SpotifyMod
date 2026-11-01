@@ -122,9 +122,7 @@ public class SettingsScreen extends Screen {
 					() -> (cfg.lyricsColor & 0xFFFFFF) == rgb, () -> cfg.lyricsColor = rgb));
 		}
 
-		addDrawableChild(new FlatSlider(x, y0 + 70, half, 22, "Linie dalej", 0, 6, cfg.lyricsLinesAhead,
-				v -> String.valueOf(Math.round(v)), v -> cfg.lyricsLinesAhead = (int) Math.round(v)));
-		addDrawableChild(new FlatSlider(x2, y0 + 70, half, 22, "Rozmiar", 0.6, 2.0, cfg.lyricsScale,
+		addDrawableChild(new FlatSlider(x, y0 + 70, w, 22, "Rozmiar", 0.5, 2.0, cfg.lyricsScale,
 				v -> String.format("%.1fx", v), v -> cfg.lyricsScale = (float) (Math.round(v * 10) / 10.0)));
 		addDrawableChild(new FlatSlider(x, y0 + 96, w, 22, "Synchronizacja", -3000, 3000, cfg.lyricsOffsetMs,
 				v -> {
@@ -228,17 +226,16 @@ public class SettingsScreen extends Screen {
 		ctx.drawBorder(x, y, w, h, 0xFF2A2A2A);
 		boolean dark = LyricsView.dark(cfg.lyricsColor);
 
-		String[] texts = {"Poprzednia linijka", "Aktualna linijka tekstu", "Nadchodząca linijka"};
-		int[] offsets = {-1, 0, 1};
-		int[] xs = {x + 12, x + w / 2, x + w - 12};
-		int[] ys = {y + 6, y + 14, y + 25};
+		String[] texts = {"Poprzednia linijka (gaśnie)", "Aktualna linijka tekstu"};
+		int[] offsets = {-1, 0};
+		int[] xs = {x + 12, x + w / 2};
+		int[] ys = {y + 8, y + 20};
 		for (int i = 0; i < texts.length; i++) {
-			if (i == 2 && cfg.lyricsLinesAhead == 0) continue;
 			Text t = Text.literal(texts[i]);
 			if (offsets[i] == 0) t = ((net.minecraft.text.MutableText) t).formatted(net.minecraft.util.Formatting.BOLD);
 			OrderedText o = t.asOrderedText();
 			int tw = textRenderer.getWidth(o);
-			int tx = i == 0 ? xs[i] : i == 1 ? xs[i] - tw / 2 : xs[i] - tw;
+			int tx = i == 0 ? xs[i] : xs[i] - tw / 2;
 			float af = LyricsView.alpha(offsets[i], 1f);
 			ctx.fill(tx - 3, ys[i] - 1, tx + tw + 3, ys[i] + 9, LyricsView.background(cfg, af));
 			ctx.drawText(textRenderer, o, tx, ys[i], LyricsView.color(cfg, offsets[i], 1f), !dark);

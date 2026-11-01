@@ -15,29 +15,26 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Wspólny model napisów dla wszystkich trybów wyświetlania:
- * poprzednia linijka (przyciemniona), aktualna (wyróżniona) i kilka nadchodzących.
+ * Wspólny model napisów dla wszystkich trybów wyświetlania: tylko to, co jest aktualnie śpiewane,
+ * plus poprzednia linijka powoli gasnąca. Żadnego podglądu linijek, których jeszcze nie słychać.
  */
 public final class LyricsView {
-	/** offset: -1 = poprzednia, 0 = aktualnie śpiewana, 1..n = nadchodzące. */
+	/** offset: -1 = poprzednia (gaśnie), 0 = aktualnie śpiewana. */
 	public record Entry(String text, int offset, float fade, int index) {
 		public boolean current() {
 			return offset == 0;
 		}
 	}
 
-	/**
-	 * Rozrzucone pozycje linijek: {przesunięcie w poziomie w stopniach (+ = w prawo),
-	 * przesunięcie w pionie w stopniach (+ = w dół)}. Pozycja zależy od numeru linijki w piosence,
-	 * więc linijka stoi w jednym miejscu, dopóki nie przestanie być widoczna.
-	 */
-	private static final float[][] SLOTS = {
-			{0, 2}, {36, 9}, {-36, 4}, {18, -7}, {-20, -10}, {40, -4}, {-40, -6}, {2, 12}
-	};
-
-	public static float[] slot(int index) {
-		return SLOTS[Math.floorMod(index, SLOTS.length)];
+	/** Strona ekranu/sceny na podstawie numeru linijki: 0 = lewo, 1 = środek, 2 = prawo. Zawsze inna niż poprzednia. */
+	public static int side(int index) {
+		return Math.floorMod(index, 3);
 	}
+
+	/** Jak długo (ms) poprzednia linijka gaśnie, zanim zniknie całkiem. */
+	private static final long PREV_FADE_MS = 1400;
+	/** Jak długo (ms) aktualna linijka narasta po starcie. */
+	private static final long CUR_FADE_MS = 450;
 
 	private static final Map<String, List<OrderedText>> WRAP_CACHE = new HashMap<>();
 
@@ -49,37 +46,31 @@ public final class LyricsView {
 			return List.of();
 		}
 		int idx = ld.indexAt(t);
+		if (idx < 0) return List.of();
+
+		LyricsData.Line cur = ld.lines.get(idx);
+		if (cur.text().isBlank()) return List.of();
 		List<Entry> out = new ArrayList<>();
 
-		if (idx >= 0) {
-			LyricsData.Line cur = ld.lines.get(idx);
-			if (!cur.text().isBlank()) {
-				for (int i = idx - 1; i >= 0; i--) {
-					String tx = ld.lines.get(i).text();
-					if (!tx.isBlank()) {
-						out.add(new Entry(tx, -1, 1f, i));
-						break;
-					}
-				}
-				float f = Math.max(0f, Math.min(1f, (t - cur.timeMs()) / 250f));
-				out.add(new Entry(cur.text(), 0, f, idx));
+		for (int i = idx - 1; i >= 0; i--) {
+			String tx = ld.lines.get(i).text();
+			if (!tx.isBlank()) {
+				float since = t - cur.timeMs();
+				float prevFade = Math.max(0f, 1f - since / PREV_FADE_MS);
+				if (prevFade > 0.02f) out.add(new Entry(tx, -1, prevFade, i));
+				break;
 			}
 		}
 
-		int added = 0;
-		for (int i = idx + 1; i < ld.lines.size() && added < cfg.lyricsLinesAhead; i++) {
-			String tx = ld.lines.get(i).text();
-			if (tx.isBlank()) continue;
-			out.add(new Entry(tx, ++added, 1f, i));
-		}
+		float f = Math.max(0f, Math.min(1f, (t - cur.timeMs()) / (float) CUR_FADE_MS));
+		out.add(new Entry(cur.text(), 0, f, idx));
 		return out;
 	}
 
-	/** Przezroczystość wpisu (0..1): poprzednia słabo widoczna, aktualna pełna, nadchodzące coraz bledsze. */
+	/** Przezroczystość wpisu (0..1): poprzednia gaśnie w czasie, aktualna narasta przy starcie. */
 	public static float alpha(int offset, float fade) {
-		if (offset < 0) return 0.38f;
-		if (offset == 0) return 0.25f + 0.75f * fade;
-		return Math.max(0.3f, 0.78f - 0.12f * offset);
+		if (offset < 0) return 0.15f + 0.45f * fade; // fade tu = prevFade (maleje do 0)
+		return 0.3f + 0.7f * fade;
 	}
 
 	/** Kolor napisów (ARGB) wybrany przez gracza, z przezroczystością zależną od wpisu. */
@@ -97,7 +88,7 @@ public final class LyricsView {
 	/** Kolor tła pod napisem (ARGB) z uwzględnieniem przezroczystości wpisu. */
 	public static int background(HudConfig cfg, float entryAlpha) {
 		int base = dark(cfg.lyricsColor) ? 0xFFFFFF : 0x000000;
-		int a = (int) (0x80 * Math.max(0.35f, entryAlpha));
+		int a = (int) (0x80 * Math.max(0.3f, entryAlpha));
 		return (a << 24) | base;
 	}
 

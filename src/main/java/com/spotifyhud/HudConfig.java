@@ -58,8 +58,6 @@ public final class HudConfig {
 	public LyricsMode lyricsMode = LyricsMode.SCATTER_WORLD;
 	/** Kolor napisów jako RGB (bez alfy). */
 	public int lyricsColor = 0xFFFFFF;
-	/** Ile nadchodzących linijek pokazywać (jeszcze nieśpiewanych). */
-	public int lyricsLinesAhead = 3;
 	public float lyricsScale = 1.0f;
 
 	public String clientId = "";
@@ -98,7 +96,6 @@ public final class HudConfig {
 					if (c.corner == null) c.corner = Corner.TOP_RIGHT;
 					if (c.lyricsMode == null) c.lyricsMode = LyricsMode.SCATTER_WORLD;
 					if (c.lyricsScale <= 0) c.lyricsScale = 1.0f;
-					c.lyricsLinesAhead = Math.max(0, Math.min(6, c.lyricsLinesAhead));
 					c.lyricsColor &= 0xFFFFFF;
 					return c;
 				}

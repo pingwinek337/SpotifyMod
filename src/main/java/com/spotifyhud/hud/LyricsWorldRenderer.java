@@ -13,15 +13,15 @@ import net.minecraft.text.OrderedText;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
  * Napisy w świecie 3D przed graczem. Tekst podąża płynnie za obrotem głowy i jest zawsze zwrócony
- * w Twoją stronę. Dwa układy:
+ * w Twoją stronę. Pokazywana jest tylko aktualnie śpiewana linijka plus poprzednia, powoli gasnąca
+ * - żadnego podglądu tego, co jeszcze nie jest śpiewane. Dwa układy:
  * <ul>
- *   <li>rozrzucony - linijki wiszą w różnych miejscach: po lewej, po prawej i na środku;</li>
- *   <li>kolumna - wszystkie linijki jedna pod drugą na niebie przed Tobą.</li>
+ *   <li>rozrzucony - linijka wisi po lewej, po prawej albo na środku, zależnie od numeru w piosence;</li>
+ *   <li>kolumna - zawsze na środku, jedna pod drugą.</li>
  * </ul>
  */
 public final class LyricsWorldRenderer {
@@ -30,11 +30,12 @@ public final class LyricsWorldRenderer {
 	private static final float COL_PITCH = -22f;
 	private static final float COL_SCALE = 0.32f;
 	private static final int COL_WRAP = 240;
-	// Rozrzucone
-	private static final double SC_DISTANCE = 14.0;
-	private static final float SC_PITCH = -6f;
-	private static final float SC_SCALE = 0.075f;
-	private static final int SC_WRAP = 110;
+	// Rozrzucone: dobrane tak, by jedna linijka zajmowała ok. 1/4 pola widzenia, nie cały ekran.
+	private static final double SC_DISTANCE = 11.0;
+	private static final float SC_PITCH = -4f;
+	private static final float SC_YAW_OFFSET = 26f; // lewo/prawo od kierunku patrzenia
+	private static final float SC_SCALE = 0.030f;
+	private static final int SC_WRAP = 130;
 
 	private static final int LIGHT = 0xF000F0;
 
@@ -92,9 +93,9 @@ public final class LyricsWorldRenderer {
 		boolean dark = LyricsView.dark(cfg.lyricsColor);
 		float s = SC_SCALE * cfg.lyricsScale;
 		for (LyricsView.Entry e : entries) {
-			float[] slot = LyricsView.slot(e.index());
-			// slot[0] = w prawo (+) / w lewo (-), slot[1] = w dół (+) / w górę (-)
-			Vec3d pos = camPos.add(Vec3d.fromPolar(SC_PITCH + slot[1], anchorYaw + slot[0]).multiply(SC_DISTANCE));
+			int side = LyricsView.side(e.index()); // 0 lewo, 1 środek, 2 prawo
+			float yawOff = side == 0 ? -SC_YAW_OFFSET : side == 2 ? SC_YAW_OFFSET : 0f;
+			Vec3d pos = camPos.add(Vec3d.fromPolar(SC_PITCH, anchorYaw + yawOff).multiply(SC_DISTANCE));
 			List<OrderedText> ls = LyricsView.wrap(tr, e.text(), SC_WRAP, e.current());
 			int color = LyricsView.color(cfg, e.offset(), e.fade());
 			int bg = LyricsView.background(cfg, LyricsView.alpha(e.offset(), e.fade()));
@@ -118,8 +119,8 @@ public final class LyricsWorldRenderer {
 		boolean dark = LyricsView.dark(cfg.lyricsColor);
 		Vec3d pos = camPos.add(Vec3d.fromPolar(COL_PITCH, anchorYaw).multiply(COL_DISTANCE));
 
-		List<List<OrderedText>> wrapped = new ArrayList<>();
 		int total = 0;
+		List<List<OrderedText>> wrapped = new java.util.ArrayList<>();
 		for (LyricsView.Entry e : entries) {
 			List<OrderedText> ls = LyricsView.wrap(tr, e.text(), COL_WRAP, e.current());
 			wrapped.add(ls);

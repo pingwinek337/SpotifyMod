@@ -37,25 +37,26 @@ public final class HudRenderer {
 		if (cfg.lyricsEnabled && !cfg.lyricsMode.world) drawLyrics(ctx, mc, cfg, pb);
 	}
 
-	/** Rozrzucone napisy: część po lewej, część po prawej, część na środku ekranu. */
+	/**
+	 * Napisy na ekranie, jedna linijka naraz (plus gasnąca poprzednia): po lewej, po prawej
+	 * lub na środku, zależnie od numeru linijki w piosence - więc kolejne linijki skaczą między
+	 * stronami, ale nigdy się nie nakładają.
+	 */
 	private static void drawScattered(DrawContext ctx, TextRenderer tr, HudConfig cfg,
 								   List<LyricsView.Entry> entries, float s, float lw, float lh) {
 		boolean dark = LyricsView.dark(cfg.lyricsColor);
-		int wrapW = (int) Math.min(150, lw * 0.28);
+		int wrapW = (int) Math.min(200, lw * 0.34);
+		float cy = lh * 0.42f;
+		float margin = 10 / s;
 		MatrixStack m = ctx.getMatrices();
 		m.push();
 		m.scale(s, s, 1f);
 		for (LyricsView.Entry e : entries) {
-			float[] slot = LyricsView.slot(e.index());
+			int side = LyricsView.side(e.index()); // 0 lewo, 1 środek, 2 prawo
 			List<OrderedText> ls = LyricsView.wrap(tr, e.text(), wrapW, e.current());
 			int blockW = 0;
 			for (OrderedText l : ls) blockW = Math.max(blockW, tr.getWidth(l));
-			int blockH = ls.size() * 10;
-
-			float cx = lw / 2f + slot[0] / 50f * lw * 0.42f;
-			float cy = lh / 2f + slot[1] / 40f * lh;
-			cx = Math.max(blockW / 2f + 6, Math.min(lw - blockW / 2f - 6, cx));
-			cy = Math.max(blockH / 2f + 4, Math.min(lh - blockH / 2f - 4, cy));
+			int blockH = ls.size() * 11;
 
 			float af = LyricsView.alpha(e.offset(), e.fade());
 			int color = LyricsView.color(cfg, e.offset(), e.fade());
@@ -63,10 +64,14 @@ public final class HudRenderer {
 			float y = cy - blockH / 2f;
 			for (OrderedText l : ls) {
 				int w = tr.getWidth(l);
-				int x = (int) (cx - w / 2f);
-				ctx.fill(x - 3, (int) y - 1, x + w + 3, (int) y + 9, bg);
-				ctx.drawText(tr, l, x, (int) y, color, !dark);
-				y += 10;
+				float x = switch (side) {
+					case 0 -> margin;
+					case 2 -> lw - margin - w;
+					default -> (lw - w) / 2f;
+				};
+				ctx.fill((int) x - 3, (int) y - 1, (int) x + w + 3, (int) y + 9, bg);
+				ctx.drawText(tr, l, (int) x, (int) y, color, !dark);
+				y += 11;
 			}
 		}
 		m.pop();

@@ -1,0 +1,9 @@
+{
+  "category.spotifyhud": "Spotify HUD",
+  "key.spotifyhud.settings": "Otwórz ustawienia",
+  "key.spotifyhud.toggle_lyrics": "Włącz/wyłącz napisy",
+  "key.spotifyhud.toggle_hud": "Włącz/wyłącz widget",
+  "key.spotifyhud.play_pause": "Odtwarzaj / pauza",
+  "key.spotifyhud.next": "Następny utwór",
+  "key.spotifyhud.previous": "Poprzedni utwór"
+}

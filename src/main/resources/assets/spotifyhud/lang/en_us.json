@@ -1,0 +1,9 @@
+{
+  "category.spotifyhud": "Spotify HUD",
+  "key.spotifyhud.settings": "Open settings",
+  "key.spotifyhud.toggle_lyrics": "Toggle lyrics",
+  "key.spotifyhud.toggle_hud": "Toggle widget",
+  "key.spotifyhud.play_pause": "Play / pause",
+  "key.spotifyhud.next": "Next track",
+  "key.spotifyhud.previous": "Previous track"
+}

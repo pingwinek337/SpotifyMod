@@ -38,6 +38,8 @@ public final class SpotifyService {
 	private volatile LyricsData lyrics;
 	private volatile String status = "";
 	private volatile long backoffUntil;
+	private volatile long lastPollMs;
+	private volatile boolean force;
 
 	private volatile String artRequestedUrl = "";
 	private volatile String artLoadedUrl = "";
@@ -58,10 +60,13 @@ public final class SpotifyService {
 	public synchronized void start() {
 		if (started) return;
 		started = true;
-		poller.scheduleWithFixedDelay(this::pollSafe, 1000, 2000, TimeUnit.MILLISECONDS);
+		// Tyknięcie co 500 ms jest tanie: faktyczne zapytanie do API zależy od stanu (patrz poll()).
+		poller.scheduleWithFixedDelay(this::pollSafe, 1000, 500, TimeUnit.MILLISECONDS);
 	}
 
+	/** Wymusza odpytanie API (np. po zmianie ustawień albo sterowaniu odtwarzaniem). */
 	public void pollSoon(long delayMs) {
+		force = true;
 		poller.schedule(this::pollSafe, delayMs, TimeUnit.MILLISECONDS);
 	}
 
@@ -159,7 +164,23 @@ public final class SpotifyService {
 			playback = null;
 			return;
 		}
-		if (System.currentTimeMillis() < backoffUntil) return;
+		long nowMs = System.currentTimeMillis();
+		if (nowMs < backoffUntil) return;
+
+		// Okładka i napisy dla bieżącego utworu (tanie sprawdzenie, bez ruchu sieciowego, jeśli nic się nie zmieniło).
+		ensureAssets(cfg);
+
+		// Adaptacyjna częstotliwość: rzadziej gdy nic nie gra, szybciej tuż przed końcem utworu.
+		Playback cur = playback;
+		long gap = 2000;
+		if (cur == null || !cur.playing()) {
+			gap = 5000;
+		} else if (cur.durationMs() > 0 && cur.durationMs() - cur.currentProgress() < 2500) {
+			gap = 500;
+		}
+		if (!force && nowMs - lastPollMs < gap - 100) return;
+		force = false;
+		lastPollMs = nowMs;
 
 		try {
 			SpotifyAuth.ensureToken();
@@ -191,11 +212,14 @@ public final class SpotifyService {
 			backoffUntil = System.currentTimeMillis() + 5000;
 		}
 
+		ensureAssets(cfg); // od razu po zmianie utworu pobieramy nową okładkę i nowe napisy
+	}
+
+	private void ensureAssets(HudConfig cfg) {
 		Playback p = playback;
-		if (p != null) {
-			if (cfg.showArt) ensureArt(p);
-			if (cfg.lyricsEnabled) ensureLyrics(p);
-		}
+		if (p == null) return;
+		if (cfg.showArt) ensureArt(p);
+		if (cfg.lyricsEnabled) ensureLyrics(p);
 	}
 
 	private void handle(Http.Response r) {

@@ -15,6 +15,7 @@ import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /** Rysuje widget "teraz gra" w rogu ekranu oraz napisy (tekst piosenki) przy dole. */
@@ -33,6 +34,97 @@ public final class HudRenderer {
 		if (pb == null) return;
 
 		if (cfg.hudEnabled) drawWidget(ctx, mc, cfg, pb);
+		if (cfg.lyricsEnabled && cfg.lyricsMode != HudConfig.LyricsMode.WORLD) drawLyrics(ctx, mc, cfg, pb);
+	}
+
+	/** Rozrzucone napisy: część po lewej, część po prawej, część na środku ekranu. */
+	private static void drawScattered(DrawContext ctx, TextRenderer tr, HudConfig cfg,
+								   List<LyricsView.Entry> entries, float s, float lw, float lh) {
+		boolean dark = LyricsView.dark(cfg.lyricsColor);
+		int wrapW = (int) Math.min(150, lw * 0.28);
+		MatrixStack m = ctx.getMatrices();
+		m.push();
+		m.scale(s, s, 1f);
+		for (LyricsView.Entry e : entries) {
+			float[] slot = LyricsView.slot(e.index());
+			List<OrderedText> ls = LyricsView.wrap(tr, e.text(), wrapW, e.current());
+			int blockW = 0;
+			for (OrderedText l : ls) blockW = Math.max(blockW, tr.getWidth(l));
+			int blockH = ls.size() * 10;
+
+			float cx = lw / 2f + slot[0] / 50f * lw * 0.42f;
+			float cy = lh / 2f + slot[1] / 40f * lh;
+			cx = Math.max(blockW / 2f + 6, Math.min(lw - blockW / 2f - 6, cx));
+			cy = Math.max(blockH / 2f + 4, Math.min(lh - blockH / 2f - 4, cy));
+
+			float af = LyricsView.alpha(e.offset(), e.fade());
+			int color = LyricsView.color(cfg, e.offset(), e.fade());
+			int bg = LyricsView.background(cfg, af);
+			float y = cy - blockH / 2f;
+			for (OrderedText l : ls) {
+				int w = tr.getWidth(l);
+				int x = (int) (cx - w / 2f);
+				ctx.fill(x - 3, (int) y - 1, x + w + 3, (int) y + 9, bg);
+				ctx.drawText(tr, l, x, (int) y, color, !dark);
+				y += 10;
+			}
+		}
+		m.pop();
+	}
+
+	/** Napisy na ekranie: po lewej, po prawej albo na dole. */
+	private static void drawLyrics(DrawContext ctx, MinecraftClient mc, HudConfig cfg, Playback pb) {
+		long t = pb.currentProgress() + cfg.lyricsOffsetMs;
+		List<LyricsView.Entry> entries = LyricsView.build(cfg, pb, SpotifyService.INSTANCE.lyrics(), t);
+		if (entries.isEmpty()) return;
+
+		TextRenderer tr = mc.textRenderer;
+		float s = cfg.lyricsScale;
+		float lw = ctx.getScaledWindowWidth() / s;
+		float lh = ctx.getScaledWindowHeight() / s;
+		HudConfig.LyricsMode mode = cfg.lyricsMode;
+
+		if (mode == HudConfig.LyricsMode.SCATTER_SCREEN) {
+			drawScattered(ctx, tr, cfg, entries, s, lw, lh);
+			return;
+		}
+		boolean bottom = mode == HudConfig.LyricsMode.BOTTOM;
+		boolean left = mode == HudConfig.LyricsMode.LEFT;
+
+		int wrapW = bottom ? (int) Math.min(300, lw * 0.7) : (int) Math.min(190, lw * 0.3);
+		float margin = 8 / s;
+		boolean dark = LyricsView.dark(cfg.lyricsColor);
+
+		// Najpierw układ: zawinięte linie każdego wpisu i łączna wysokość.
+		List<List<OrderedText>> wrapped = new ArrayList<>();
+		int total = 0;
+		for (LyricsView.Entry e : entries) {
+			List<OrderedText> ls = LyricsView.wrap(tr, e.text(), wrapW, e.current());
+			wrapped.add(ls);
+			total += ls.size() * 10 + 5;
+		}
+		total -= 5;
+
+		float y = bottom ? lh - 100 / s - total : (lh - total) / 2f;
+
+		MatrixStack m = ctx.getMatrices();
+		m.push();
+		m.scale(s, s, 1f);
+		for (int i = 0; i < entries.size(); i++) {
+			LyricsView.Entry e = entries.get(i);
+			float af = LyricsView.alpha(e.offset(), e.fade());
+			int color = LyricsView.color(cfg, e.offset(), e.fade());
+			int bg = LyricsView.background(cfg, af);
+			for (OrderedText l : wrapped.get(i)) {
+				int w = tr.getWidth(l);
+				float x = bottom ? (lw - w) / 2f : left ? margin : lw - margin - w;
+				ctx.fill((int) x - 3, (int) y - 1, (int) x + w + 3, (int) y + 9, bg);
+				ctx.drawText(tr, l, (int) x, (int) y, color, !dark);
+				y += 10;
+			}
+			y += 5;
+		}
+		m.pop();
 	}
 
 	private static void drawWidget(DrawContext ctx, MinecraftClient mc, HudConfig cfg, Playback pb) {

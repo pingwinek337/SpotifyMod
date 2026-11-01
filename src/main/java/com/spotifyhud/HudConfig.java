@@ -34,6 +34,30 @@ public final class HudConfig {
 		}
 	}
 
+	/** Gdzie wyświetlać napisy. */
+	public enum LyricsMode {
+		SCATTER_WORLD("Rozrzucone w 3D"), SCATTER_SCREEN("Rozrzucone na ekranie"),
+		WORLD("Kolumna w 3D"), LEFT("Lewa strona"), RIGHT("Prawa strona"), BOTTOM("Dół ekranu");
+
+		public final String label;
+
+		LyricsMode(String label) {
+			this.label = label;
+		}
+
+		public LyricsMode next() {
+			LyricsMode[] v = values();
+			return v[(ordinal() + 1) % v.length];
+		}
+	}
+
+	public LyricsMode lyricsMode = LyricsMode.SCATTER_WORLD;
+	/** Kolor napisów jako RGB (bez alfy). */
+	public int lyricsColor = 0xFFFFFF;
+	/** Ile nadchodzących linijek pokazywać (jeszcze nieśpiewanych). */
+	public int lyricsLinesAhead = 3;
+	public float lyricsScale = 1.0f;
+
 	public String clientId = "";
 	public String accessToken = "";
 	public String refreshToken = "";
@@ -68,6 +92,10 @@ public final class HudConfig {
 				HudConfig c = GSON.fromJson(Files.readString(p, StandardCharsets.UTF_8), HudConfig.class);
 				if (c != null) {
 					if (c.corner == null) c.corner = Corner.TOP_RIGHT;
+					if (c.lyricsMode == null) c.lyricsMode = LyricsMode.SCATTER_WORLD;
+					if (c.lyricsScale <= 0) c.lyricsScale = 1.0f;
+					c.lyricsLinesAhead = Math.max(0, Math.min(6, c.lyricsLinesAhead));
+					c.lyricsColor &= 0xFFFFFF;
 					return c;
 				}
 			}

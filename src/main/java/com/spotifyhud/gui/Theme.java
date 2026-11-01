@@ -11,7 +11,24 @@ public final class Theme {
 	public static final int TEXT = 0xFFFFFFFF;
 	public static final int MUTED = 0xFF9A9A9A;
 
+	/** Paleta kolorów napisów (RGB) i ich nazwy. */
+	public static final int[] LYRIC_COLORS = {
+			0xFFFFFF, 0x000000, 0xE5242B, 0xFF9A2E, 0xFFE14D,
+			0x1DB954, 0x4DD0FF, 0x3B6BFF, 0xA455FF, 0xFF6FB5
+	};
+	public static final String[] LYRIC_NAMES = {
+			"Biały", "Czarny", "Czerwony", "Pomarańczowy", "Żółty",
+			"Zielony", "Błękitny", "Niebieski", "Fioletowy", "Różowy"
+	};
+
 	private Theme() {
+	}
+
+	public static String colorName(int rgb) {
+		for (int i = 0; i < LYRIC_COLORS.length; i++) {
+			if (LYRIC_COLORS[i] == (rgb & 0xFFFFFF)) return LYRIC_NAMES[i];
+		}
+		return "Własny";
 	}
 
 	public static int lighten(int argb, float amount) {

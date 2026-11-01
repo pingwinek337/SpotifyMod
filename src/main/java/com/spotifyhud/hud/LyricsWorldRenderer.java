@@ -18,12 +18,14 @@ import net.minecraft.util.math.Vec3d;
 import java.util.List;
 
 /**
- * Napisy wiszące w świecie przed graczem: tekst unosi się kilka kratek przed Tobą
+ * Napisy na niebie przed graczem: tekst unosi się wysoko nad horyzontem przed Tobą
  * (płynnie podąża za obrotem głowy) i jest zawsze zwrócony w Twoją stronę.
  */
 public final class LyricsWorldRenderer {
-	private static final double DISTANCE = 3.5;
-	private static final float SCALE = 0.035f;
+	private static final double DISTANCE = 32.0;
+	/** Ujemny kąt = w górę, czyli napisy wiszą na niebie. */
+	private static final float PITCH = -28f;
+	private static final float SCALE = 0.32f;
 	private static final int LIGHT = 0xF000F0;
 
 	private static boolean init;
@@ -64,7 +66,7 @@ public final class LyricsWorldRenderer {
 			anchorYaw += diff * (float) (1 - Math.exp(-dt * 5));
 		}
 
-		Vec3d pos = camPos.add(Vec3d.fromPolar(8f, anchorYaw).multiply(DISTANCE));
+		Vec3d pos = camPos.add(Vec3d.fromPolar(PITCH, anchorYaw).multiply(DISTANCE));
 
 		TextRenderer tr = mc.textRenderer;
 		double k = Math.max(0.0, Math.min(1.0, (t - cur.timeMs()) / 250.0));

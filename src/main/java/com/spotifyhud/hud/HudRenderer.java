@@ -33,7 +33,6 @@ public final class HudRenderer {
 		if (pb == null) return;
 
 		if (cfg.hudEnabled) drawWidget(ctx, mc, cfg, pb);
-		if (cfg.lyricsEnabled) drawLyrics(ctx, mc, cfg, pb);
 	}
 
 	private static void drawWidget(DrawContext ctx, MinecraftClient mc, HudConfig cfg, Playback pb) {
@@ -93,51 +92,6 @@ public final class HudRenderer {
 			ctx.fill(fx - 1, by - 1, fx + 2, by + 4, 0xFFFFFFFF);
 		}
 		m.pop();
-	}
-
-	private static void drawLyrics(DrawContext ctx, MinecraftClient mc, HudConfig cfg, Playback pb) {
-		LyricsData ld = SpotifyService.INSTANCE.lyrics();
-		if (ld == null || ld.state != LyricsData.State.READY || !ld.trackId.equals(pb.id())) return;
-
-		long t = pb.currentProgress() + cfg.lyricsOffsetMs;
-		int idx = ld.indexAt(t);
-		if (idx < 0) return;
-		LyricsData.Line cur = ld.lines.get(idx);
-		if (cur.text().isBlank()) return;
-
-		TextRenderer tr = mc.textRenderer;
-		int sw = ctx.getScaledWindowWidth();
-		int sh = ctx.getScaledWindowHeight();
-		int maxW = Math.min((int) (sw * 0.7), 360);
-
-		List<OrderedText> curLines = tr.wrapLines(Text.literal(cur.text()), maxW);
-		String nextText = "";
-		if (idx + 1 < ld.lines.size()) nextText = ld.lines.get(idx + 1).text();
-
-		double k = Math.max(0.0, Math.min(1.0, (t - cur.timeMs()) / 250.0));
-		int a = 0x30 + (int) (k * (0xFF - 0x30));
-		int curColor = (a << 24) | 0xFFFFFF;
-		int nextColor = (Math.min(a, 0x99) << 24) | 0xB3B3B3;
-
-		int lineH = 10;
-		int blockH = curLines.size() * lineH + (nextText.isBlank() ? 0 : lineH + 3);
-		int widest = 0;
-		for (OrderedText l : curLines) widest = Math.max(widest, tr.getWidth(l));
-		String nextFit = nextText.isBlank() ? "" : fit(tr, nextText, maxW);
-		if (!nextFit.isEmpty()) widest = Math.max(widest, tr.getWidth(nextFit));
-
-		int cx = sw / 2;
-		int top = sh - 96 - blockH;
-		ctx.fill(cx - widest / 2 - 6, top - 4, cx + widest / 2 + 6, top + blockH + 3, 0x80000000);
-
-		int y = top;
-		for (OrderedText l : curLines) {
-			ctx.drawText(tr, l, cx - tr.getWidth(l) / 2, y, curColor, true);
-			y += lineH;
-		}
-		if (!nextFit.isEmpty()) {
-			ctx.drawText(tr, nextFit, cx - tr.getWidth(nextFit) / 2, y + 3, nextColor, false);
-		}
 	}
 
 	private static String fit(TextRenderer tr, String s, int maxW) {

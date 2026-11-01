@@ -3,7 +3,7 @@
 Mod kliencki pokazujący w grze, czego słuchasz na Spotify.
 
 - **Widget „teraz gra”** w rogu ekranu (domyślnie prawy górny): okładka, tytuł, wykonawca, pasek postępu.
-- **Napisy** (tekst piosenki) przy dole ekranu zwykłą czcionką Minecrafta, zsynchronizowane z muzyką.
+- **Napisy** (tekst piosenki) wiszą w świecie kilka kratek przed Tobą, zwykłą czcionką Minecrafta, zsynchronizowane z muzyką.
 - **GUI ustawień** pod klawiszem **K**: połączenie konta, widget, napisy, okładka, pasek postępu,
   pozycja (4 rogi), skala, przezroczystość tła, synchronizacja napisów.
 - Skróty (nieprzypisane domyślnie, ustawisz w Sterowaniu): play/pauza, następny, poprzedni

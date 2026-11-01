@@ -2,11 +2,13 @@ package com.spotifyhud;
 
 import com.spotifyhud.gui.SettingsScreen;
 import com.spotifyhud.hud.HudRenderer;
+import com.spotifyhud.hud.LyricsWorldRenderer;
 import com.spotifyhud.spotify.SpotifyService;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
@@ -34,6 +36,7 @@ public class SpotifyHudMod implements ClientModInitializer {
 		prevTrack = key("previous", GLFW.GLFW_KEY_UNKNOWN);
 
 		HudRenderCallback.EVENT.register(HudRenderer::render);
+		WorldRenderEvents.LAST.register(LyricsWorldRenderer::render);
 		ClientTickEvents.END_CLIENT_TICK.register(this::tick);
 	}
 

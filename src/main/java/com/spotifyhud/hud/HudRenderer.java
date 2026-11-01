@@ -34,7 +34,7 @@ public final class HudRenderer {
 		if (pb == null) return;
 
 		if (cfg.hudEnabled) drawWidget(ctx, mc, cfg, pb);
-		if (cfg.lyricsEnabled && cfg.lyricsMode != HudConfig.LyricsMode.WORLD) drawLyrics(ctx, mc, cfg, pb);
+		if (cfg.lyricsEnabled && !cfg.lyricsMode.world) drawLyrics(ctx, mc, cfg, pb);
 	}
 
 	/** Rozrzucone napisy: część po lewej, część po prawej, część na środku ekranu. */

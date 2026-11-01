@@ -49,9 +49,7 @@ public final class LyricsWorldRenderer {
 		MinecraftClient mc = MinecraftClient.getInstance();
 		HudConfig cfg = HudConfig.get();
 		HudConfig.LyricsMode mode = cfg.lyricsMode;
-		if (!cfg.lyricsEnabled || (mode != HudConfig.LyricsMode.WORLD && mode != HudConfig.LyricsMode.SCATTER_WORLD)) {
-			return;
-		}
+		if (!cfg.lyricsEnabled || !mode.world) return;
 		if (mc.player == null || mc.options.hudHidden) return;
 
 		Playback pb = SpotifyService.INSTANCE.playback();

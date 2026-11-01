@@ -36,13 +36,17 @@ public final class HudConfig {
 
 	/** Gdzie wyświetlać napisy. */
 	public enum LyricsMode {
-		SCATTER_WORLD("Rozrzucone w 3D"), SCATTER_SCREEN("Rozrzucone na ekranie"),
-		WORLD("Kolumna w 3D"), LEFT("Lewa strona"), RIGHT("Prawa strona"), BOTTOM("Dół ekranu");
+		SCATTER_WORLD("Rozrzucone w 3D", true), SCATTER_SCREEN("Rozrzucone na ekranie", false),
+		WORLD("Kolumna w 3D", true), LEFT("Lewa strona", false), RIGHT("Prawa strona", false),
+		BOTTOM("Dół ekranu", false);
 
 		public final String label;
+		/** true = rysowane w świecie 3D (LyricsWorldRenderer), false = na ekranie (HudRenderer). */
+		public final boolean world;
 
-		LyricsMode(String label) {
+		LyricsMode(String label, boolean world) {
 			this.label = label;
+			this.world = world;
 		}
 
 		public LyricsMode next() {
